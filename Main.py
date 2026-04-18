@@ -10,16 +10,24 @@ from utils.angle import normalize_angle
 
 SEED = 16
 
-
+# ==========================================
+# EXECUTION MODES
+# ==========================================
 MODE_PERFECT_ID_ONLY = False
 MODE_DATA_ASSOCIATION_ONLY = True
 MODE_COMPARISON = False
 
+# ==========================================
+# PLOT OPTIONS
+# ==========================================
 ENABLE_REALTIME = True
 ENABLE_RESULTS = True
 ENABLE_ERRORS = True
 ENABLE_LANDMARKERROR = True
 
+# ==========================================
+# SIMULATION SETTINGS
+# ==========================================
 CIRCLE_TRAJECTORY = False
 INFTY_TRAJECTORY = True
 ENABLED_FOV = False
@@ -29,6 +37,9 @@ RANGE_MAX = 10.0
 ROBOT_RANGE = 5
 NUM_LANDMARKS = 35
 
+# ==========================================
+# NOISE SETTINGS
+# ==========================================
 Q = 0.01 * np.eye(2)
 noise = 0.05
 R = np.diag([noise, noise, noise / 10])
@@ -89,7 +100,7 @@ def generate_landmarks(n):
 
 def draw_realtime_ax(ax, enable_da, true_landmarks, true_history, path_history, x_true, x_ukf, P, map_list):
     ax.clear()
-    ax.set_title(f"UKF-SLAM {'with Data Association' if enable_da else 'con ID Perfetti'}", fontsize=14)
+    ax.set_title(f"UKF-SLAM {'with Data Association' if enable_da else 'with Perfect IDs'}", fontsize=14)
     ax.set_xlabel("X (meters)")
     ax.set_ylabel("Y (meters)")
     ax.grid(True, linestyle='--', alpha=0.6)
@@ -138,7 +149,6 @@ def draw_realtime_ax(ax, enable_da, true_landmarks, true_history, path_history, 
 
 
 def run_slam_simulation(enable_da, show_realtime):
-    """Esegue una singola run del processo SLAM utilizzando le classi create."""
     random.seed(SEED)
     np.random.seed(SEED)
     NUM_STEPS = get_steps()
@@ -177,7 +187,7 @@ def run_slam_simulation(enable_da, show_realtime):
         # PREDICTION
         x_ukf, P = slam_system.predict(x_ukf, P, u_noisy)
 
-        # OSSERVAZIONI
+        # OBSERVATION
         z_list = []
         for l_id, (lx, ly) in true_landmarks.items():
             z = robot_model.g(x_true.reshape(-1, 1), lx, ly)
@@ -207,12 +217,11 @@ def run_slam_simulation(enable_da, show_realtime):
 
     if show_realtime:
         plt.ioff()
-        plt.close(fig)  # Chiude la finestra real-time per non accumularle
+        plt.close(fig) 
 
     return true_history, path_history, x_error, y_error, th_error, map_list, x_ukf, P, true_landmarks
 
 def run_slam_comparison_simultaneous():
-    """Esegue entrambe le run simultaneamente e le affianca in una singola finestra real-time."""
     random.seed(SEED)
     np.random.seed(SEED)
     NUM_STEPS = get_steps()
@@ -237,7 +246,7 @@ def run_slam_comparison_simultaneous():
 
     plt.ion()
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 10))
-    fig.suptitle("Confronto Real-Time Simultaneo: ID Perfetti vs Data Association", fontsize=16)
+    fig.suptitle("Perfect IDs vs Data Association", fontsize=16)
 
     for t in range(NUM_STEPS):
         u_true = get_command(t, NUM_STEPS)
@@ -248,7 +257,6 @@ def run_slam_comparison_simultaneous():
         true_history_noda.append((x_true_noda[0], x_true_noda[1]))
         true_history_da.append((x_true_da[0], x_true_da[1]))
 
-        # Stesso rumore di processo per un confronto 1:1 equo
         u_noisy = {
             'r1': u_true['r1'] + np.random.normal(0, 0.02),
             't': u_true['t'] + np.random.normal(0, 0.05),
@@ -265,7 +273,7 @@ def run_slam_comparison_simultaneous():
             if r_true < ROBOT_RANGE and abs(phi_true) < get_fov(ENABLED_FOV):
                 noise_r = np.random.normal(0, 0.1)
                 noise_phi = np.random.normal(0, 0.05)
-                # Stesso rumore di misurazione
+                
                 obs_noda = {'range': r_true + noise_r, 'bearing': phi_true + noise_phi, 'id': l_id}
                 obs_da = {'range': r_true + noise_r, 'bearing': phi_true + noise_phi, 'true_id': l_id}
                 z_list_noda.append(obs_noda)
@@ -299,13 +307,13 @@ def run_slam_comparison_simultaneous():
     return res_noda, res_da
 
 # ==========================================
-# FUNZIONI DI PLOTTING E RISULTATI
+# PLOTTING FUNCTIONS
 # ==========================================
 
 def plot_static_map(res, title_suffix, is_da):
     true_history, path_history, _, _, _, map_list, x_ukf, P, true_landmarks = res
     fig, ax = plt.subplots(figsize=(12, 12))
-    ax.set_title(f"UKF-SLAM Static Results {title_suffix}", fontsize=16)
+    ax.set_title(f"UKF-SLAM Results {title_suffix}", fontsize=16)
     ax.set_xlabel("X (meters)")
     ax.set_ylabel("Y (meters)")
     ax.grid(True, linestyle='--', alpha=0.6)
@@ -380,7 +388,7 @@ def plot_landmark_errors(res, title_suffix, is_da):
         ax_lm.set_xticklabels([f"LM {lid}" for lid in lm_ids_sorted], rotation=45, ha='right', fontsize=8)
         ax_lm.set_ylabel("Euclidean Error (m)")
         ax_lm.set_xlabel("Landmark ID")
-        ax_lm.set_title(f"Landmark Position Error {title_suffix} (False positives: {false_positives})", fontsize=14)
+        ax_lm.set_title(f"Landmark Position Error {title_suffix}", fontsize=14)
         ax_lm.grid(True, axis='y', linestyle='--', alpha=0.6)
         plt.tight_layout()
 
@@ -389,7 +397,7 @@ def plot_comparison_map(res_da, res_noda):
     _, path_noda, _, _, _, _, _, _, _ = res_noda
     
     fig, ax = plt.subplots(figsize=(12, 12))
-    ax.set_title("Confronto Traiettorie: Data Association vs ID Perfetti", fontsize=16)
+    ax.set_title("Data Association vs Perfect IDs", fontsize=16)
     ax.set_xlabel("X (meters)")
     ax.set_ylabel("Y (meters)")
     ax.grid(True, linestyle='--', alpha=0.6)
@@ -401,7 +409,7 @@ def plot_comparison_map(res_da, res_noda):
     ax.plot(px, py, 'g--', alpha=0.6, linewidth=2, label="True Path")
     
     px_n, py_n = zip(*path_noda)
-    ax.plot(px_n, py_n, 'b--', alpha=0.7, linewidth=2, label="Estimated Path (ID Perfetti)")
+    ax.plot(px_n, py_n, 'b--', alpha=0.7, linewidth=2, label="Estimated Path (Perfect IDs)")
     
     px_d, py_d = zip(*path_da)
     ax.plot(px_d, py_d, 'r--', alpha=0.7, linewidth=2, label="Estimated Path (Data Association)")
@@ -415,24 +423,24 @@ def plot_comparison_pose_errors(res_da, res_noda):
     
     fig_comp_err, axes_comp = plt.subplots(3, 1, figsize=(12, 10), sharex=True)
     axes_comp[0].plot(steps, err_x_da, 'r-', linewidth=1.5, label='Data Association')
-    axes_comp[0].plot(steps, err_x_noda, 'b--', linewidth=1.5, label='ID Perfetti')
+    axes_comp[0].plot(steps, err_x_noda, 'b--', linewidth=1.5, label='Perfect IDs')
     axes_comp[0].set_ylabel("Error X (m)")
     axes_comp[0].legend(loc="upper right")
     axes_comp[0].grid(True, linestyle='--', alpha=0.7)
 
     axes_comp[1].plot(steps, err_y_da, 'r-', linewidth=1.5, label='Data Association')
-    axes_comp[1].plot(steps, err_y_noda, 'b--', linewidth=1.5, label='ID Perfetti')
+    axes_comp[1].plot(steps, err_y_noda, 'b--', linewidth=1.5, label='Perfect IDs')
     axes_comp[1].set_ylabel("Error Y (m)")
     axes_comp[1].legend(loc="upper right")
     axes_comp[1].grid(True, linestyle='--', alpha=0.7)
 
     axes_comp[2].plot(steps, np.degrees(err_th_da), 'r-', linewidth=1.5, label='Data Association')
-    axes_comp[2].plot(steps, np.degrees(err_th_noda), 'b--', linewidth=1.5, label='ID Perfetti')
+    axes_comp[2].plot(steps, np.degrees(err_th_noda), 'b--', linewidth=1.5, label='Perfect IDs')
     axes_comp[2].set_ylabel("Error Theta (deg)")
     axes_comp[2].set_xlabel("Step")
     axes_comp[2].legend(loc="upper right")
     axes_comp[2].grid(True, linestyle='--', alpha=0.7)
-    fig_comp_err.suptitle("Confronto Errori di Posa", fontsize=16)
+    fig_comp_err.suptitle("Comparison of Pose Errors", fontsize=16)
     plt.tight_layout()
 
 def plot_comparison_landmark_errors(res_da, res_noda):
@@ -453,11 +461,11 @@ def plot_comparison_landmark_errors(res_da, res_noda):
     width = 0.35
 
     ax_comp_lm.bar(x_indices - width / 2, vals_da, width, label='Data Association', color='indianred', edgecolor='black')
-    ax_comp_lm.bar(x_indices + width / 2, vals_noda, width, label='ID Perfetti', color='steelblue', edgecolor='black')
+    ax_comp_lm.bar(x_indices + width / 2, vals_noda, width, label='Perfect IDs', color='steelblue', edgecolor='black')
     ax_comp_lm.set_xticks(x_indices)
     ax_comp_lm.set_xticklabels([f"LM {lid}" for lid in common_ids], rotation=45, ha='right', fontsize=9)
-    ax_comp_lm.set_ylabel("Errore Euclideo (m)")
-    ax_comp_lm.set_title("Confronto Errore Posizione Landmark", fontsize=16)
+    ax_comp_lm.set_ylabel("Euclidean Error (m)")
+    ax_comp_lm.set_title("Comparison of Landmark Positioning Errors", fontsize=16)
     ax_comp_lm.legend()
     ax_comp_lm.grid(True, axis='y', linestyle='--', alpha=0.6)
     plt.tight_layout()
@@ -469,17 +477,15 @@ def plot_comparison_landmark_errors(res_da, res_noda):
 
 def main():
     if MODE_PERFECT_ID_ONLY:
-        print("Esecuzione simulazione SOLO con ID Perfetti...")
         res = run_slam_simulation(enable_da=False, show_realtime=ENABLE_REALTIME)
         if ENABLE_RESULTS: 
-            plot_static_map(res, "(ID Perfetti)", False)
+            plot_static_map(res, "(Perfect IDs)", False)
         if ENABLE_ERRORS: 
-            plot_pose_errors(res, "(ID Perfetti)")
+            plot_pose_errors(res, "(Perfect IDs)")
         if ENABLE_LANDMARKERROR: 
-            plot_landmark_errors(res, "(ID Perfetti)", False)
+            plot_landmark_errors(res, "(Perfect IDs)", False)
 
     elif MODE_DATA_ASSOCIATION_ONLY:
-        print("Esecuzione simulazione SOLO con Data Association...")
         res = run_slam_simulation(enable_da=True, show_realtime=ENABLE_REALTIME)
         if ENABLE_RESULTS: 
             plot_static_map(res, "(Data Association)", True)
@@ -489,16 +495,12 @@ def main():
             plot_landmark_errors(res, "(Data Association)", True)
 
     elif MODE_COMPARISON:
-        print("--- RUN 1 & 2: Esecuzione simultanea UKF-SLAM (ID Perfetti vs Data Association) ---")
         if ENABLE_REALTIME:
             res_noda, res_da = run_slam_comparison_simultaneous()
         else:
-            # Fallback se il real-time è disabilitato (esegue sequenzialmente per non usare GUI)
-            print("--- Esecuzione sequenziale senza visualizzazione real-time ---")
             res_noda = run_slam_simulation(enable_da=False, show_realtime=False)
             res_da = run_slam_simulation(enable_da=True, show_realtime=False)
 
-        print("\nGenerazione grafici di confronto...")
         if ENABLE_RESULTS: 
             plot_comparison_map(res_da, res_noda)
         if ENABLE_ERRORS: 
@@ -506,10 +508,6 @@ def main():
         if ENABLE_LANDMARKERROR: 
             plot_comparison_landmark_errors(res_da, res_noda)
 
-    else:
-        print("Nessuna modalità selezionata. Imposta almeno una MODE_... a True in cima al file.")
-
-    # Mostra tutti i grafici generati
     plt.show()
 
 if __name__ == '__main__':

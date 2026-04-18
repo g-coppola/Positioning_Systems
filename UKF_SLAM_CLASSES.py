@@ -198,7 +198,6 @@ class UKF_SLAM_DA(UKF_SLAM):
         return associations, new_observations
 
     def update(self, x_hat, P_hat, z_list, map_list):
-        """Update con Data Association."""
         if len(map_list) == 0:
             # Primo step
             for z in z_list:
