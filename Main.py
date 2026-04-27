@@ -43,8 +43,6 @@ ENABLE_LANDMARK_ERROR_HISTORY = True
 # ==========================================
 # SIMULATION SETTINGS
 # ==========================================
-CIRCLE_TRAJECTORY = False
-INFTY_TRAJECTORY = True
 ENABLED_FOV = False
 
 RANGE_MIN = -10.0
@@ -71,37 +69,22 @@ def plot_covariance_ellipse(x, y, cov, ax, color, alpha=0.3):
 
 def get_command(t, steps):
     u_true = {}
-    if INFTY_TRAJECTORY:
-        v = 0.4
-        w = 0.126
-        if t < steps // 2:
-            u_true = {'r1': w, 't': v, 'r2': 0.0}
-        else:
-            u_true = {'r1': -w, 't': v, 'r2': 0.0}
-    if CIRCLE_TRAJECTORY:
-        v = 0.4
-        w = 0.0628
+    v = 0.4
+    w = 0.126
+    
+    if t < steps // 2:
         u_true = {'r1': w, 't': v, 'r2': 0.0}
+    else:
+        u_true = {'r1': -w, 't': v, 'r2': 0.0}
     return u_true
 
 def get_initial_conditions(P):
-    x0 = None
-    if INFTY_TRAJECTORY:
-        x0 = np.array([0.0, 0.0, 0.0])
-    if CIRCLE_TRAJECTORY:
-        x0 = np.array([0.0, -7.0, 0.0])
+    x0 = np.array([0.0, 0.0, 0.0])
     x_hat = scipy.linalg.sqrtm(P) @ np.random.randn(x0.shape[0], 1) + x0.reshape(-1, 1)
     return x0, x_hat
 
 def get_fov(enabled):
     return np.pi / 2 if enabled else np.pi
-
-def get_steps():
-    if INFTY_TRAJECTORY: 
-        return 100
-    if CIRCLE_TRAJECTORY: 
-        return 200
-    return None
 
 def generate_landmarks(n):
     landmarks = {}
@@ -164,7 +147,7 @@ def draw_realtime_ax(ax, enable_da, true_landmarks, true_history, path_history, 
 def run_slam_simulation(enable_da, show_realtime):
     random.seed(SEED)
     np.random.seed(SEED)
-    NUM_STEPS = get_steps()
+    NUM_STEPS = 100
 
     P = 0.01 * np.eye(3)
     map_list = []
@@ -253,7 +236,7 @@ def run_slam_simulation(enable_da, show_realtime):
 def run_slam_comparison_simultaneous():
     random.seed(SEED)
     np.random.seed(SEED)
-    NUM_STEPS = get_steps()
+    NUM_STEPS = 100
 
     P_noda = 0.01 * np.eye(3)
     P_da = 0.01 * np.eye(3)
