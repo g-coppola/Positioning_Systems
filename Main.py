@@ -9,20 +9,26 @@ from UKF_SLAM_CLASSES import UKF_SLAM, UKF_SLAM_DA
 from utils.angle import normalize_angle
 
 
+SIMULATION_CASE = "best"    # Options: "best", "middle", "worst"
 
 # ==========================================
 # SIMULATION CASES
 # ==========================================
-# --- Best Case 
-SEED = 16
-NUM_LANDMARKS = 35
-noise = 0.05
-
-
-# --- Worst Case
-#SEED = 1
-#NUM_LANDMARKS = 4
-#noise = 0.2
+def get_case(case="middle"):
+    if case == "best":
+        SEED = 16
+        NUM_LANDMARKS = 35
+        noise = 0.05
+    elif case == "worst":
+        SEED = 1
+        NUM_LANDMARKS = 4
+        noise = 0.2
+    else:  
+        # --- Middle Case
+        SEED = 3
+        NUM_LANDMARKS = 16
+        noise = 0.15
+    return SEED, NUM_LANDMARKS, noise
 
 # ==========================================
 # EXECUTION MODES
@@ -50,8 +56,9 @@ RANGE_MAX = 10.0
 ROBOT_RANGE = 5
 
 # ==========================================
-# NOISE SETTINGS
+# GENERAL SETTINGS
 # ==========================================
+SEED, NUM_LANDMARKS, noise = get_case(SIMULATION_CASE)
 Q = 0.01 * np.eye(2)
 R = np.diag([noise, noise, noise / 10])
 
@@ -436,17 +443,6 @@ def plot_landmark_errors(res, title_suffix, is_da):
 # ==========================================
 
 def plot_landmark_error_history(res, title_suffix, max_landmarks=None):
-    """
-    Plot the Euclidean error of each landmark over time (step by step).
-    Shows how each landmark's position estimate improves (or not) as it is observed.
-
-    Parameters
-    ----------
-    res          : simulation result tuple (10 elements)
-    title_suffix : string label for the plot title
-    max_landmarks: if set, only plot the first N landmark IDs (sorted); 
-                   None means plot all
-    """
     landmark_error_history = res[9]
 
     if not landmark_error_history:
@@ -458,7 +454,7 @@ def plot_landmark_error_history(res, title_suffix, max_landmarks=None):
         sorted_ids = sorted_ids[:max_landmarks]
 
     n = len(sorted_ids)
-    cmap = plt.cm.get_cmap('tab20', max(n, 1))
+    cmap = plt.get_cmap('tab20', max(n, 1))
 
     fig, ax = plt.subplots(figsize=(13, 6))
 
@@ -502,7 +498,7 @@ def plot_comparison_landmark_error_history(res_da, res_noda, max_landmarks=None)
         common_ids = common_ids[:max_landmarks]
 
     n = len(common_ids)
-    cmap = plt.cm.get_cmap('tab20', max(n, 1))
+    cmap = plt.get_cmap('tab20', max(n, 1))
 
     fig, (ax_noda, ax_da) = plt.subplots(1, 2, figsize=(20, 7), sharey=True)
     fig.suptitle("Landmark Error over Time: Perfect IDs vs Data Association", fontsize=15, fontweight='bold')
