@@ -8,19 +8,21 @@ from DifferentialDrive import DifferentialDrive
 from UKF_SLAM_CLASSES import UKF_SLAM, UKF_SLAM_DA
 from utils.angle import normalize_angle
 
-SEED = 16
+
 
 # ==========================================
 # SIMULATION CASES
 # ==========================================
 # --- Best Case 
-#NUM_LANDMARKS = 35
-#noise = 0.05
+SEED = 16
+NUM_LANDMARKS = 35
+noise = 0.05
 
 
 # --- Worst Case
-NUM_LANDMARKS = 4
-noise = 0.2
+#SEED = 1
+#NUM_LANDMARKS = 4
+#noise = 0.2
 
 # ==========================================
 # EXECUTION MODES

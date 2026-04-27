@@ -95,7 +95,6 @@ class UKF_SLAM:
         return x_ret, P_ret, map_list
 
     def update(self, x_hat, P_hat, z_list, map_list):
-        """Update con ID Perfetti."""
         for z in z_list:
             if z['id'] not in map_list:
                 x_hat, P_hat, map_list = self.add_landmark_to_map(x_hat, P_hat, z, map_list)
