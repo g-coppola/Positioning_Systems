@@ -9,7 +9,7 @@ from UKF_SLAM_CLASSES import UKF_SLAM, UKF_SLAM_DA
 from utils.angle import normalize_angle
 
 
-SIMULATION_CASE = "best"    # Options: "best", "middle", "worst"
+SIMULATION_CASE = "middle"    # Options: "best", "middle", "worst"
 
 # ==========================================
 # SIMULATION CASES
@@ -24,7 +24,6 @@ def get_case(case="middle"):
         NUM_LANDMARKS = 4
         noise = 0.2
     else:  
-        # --- Middle Case
         SEED = 3
         NUM_LANDMARKS = 16
         noise = 0.15
@@ -164,7 +163,6 @@ def run_slam_simulation(enable_da, show_realtime):
     true_history, path_history = [], []
     x_error, y_error, th_error = [], [], []
 
-    # NEW: landmark error history {l_id: [(step, error), ...]}
     landmark_error_history = {}
 
     robot_model = DifferentialDrive()
@@ -258,7 +256,6 @@ def run_slam_comparison_simultaneous():
     true_history_noda, path_history_noda, x_error_noda, y_error_noda, th_error_noda = [], [], [], [], []
     true_history_da, path_history_da, x_error_da, y_error_da, th_error_da = [], [], [], [], []
 
-    # NEW: landmark error histories for both systems
     landmark_error_history_noda = {}
     landmark_error_history_da = {}
 
@@ -438,10 +435,6 @@ def plot_landmark_errors(res, title_suffix, is_da):
         plt.tight_layout()
 
 
-# ==========================================
-# NEW: Landmark Error History Plot
-# ==========================================
-
 def plot_landmark_error_history(res, title_suffix, max_landmarks=None):
     landmark_error_history = res[9]
 
@@ -472,7 +465,6 @@ def plot_landmark_error_history(res, title_suffix, max_landmarks=None):
     ax.set_ylabel("Euclidean Error (m)")
     ax.grid(True, linestyle='--', alpha=0.6)
 
-    # Legend: two columns when many landmarks
     ncol = 2 if n > 10 else 1
     ax.legend(loc='upper right', fontsize=7, ncol=ncol)
 
@@ -480,12 +472,6 @@ def plot_landmark_error_history(res, title_suffix, max_landmarks=None):
 
 
 def plot_comparison_landmark_error_history(res_da, res_noda, max_landmarks=None):
-    """
-    Side-by-side comparison of landmark error over time:
-    left panel = Perfect IDs, right panel = Data Association.
-
-    Only landmarks common to both runs are shown so the comparison is fair.
-    """
     leh_noda = res_noda[9]
     leh_da   = res_da[9]
 
