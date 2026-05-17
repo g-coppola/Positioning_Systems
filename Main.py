@@ -9,7 +9,7 @@ from UKF_SLAM_CLASSES import UKF_SLAM, UKF_SLAM_DA
 from utils.angle import normalize_angle
 
 
-SIMULATION_CASE = "middle"    # Options: "best", "middle", "worst"
+SIMULATION_CASE = "best"    # Options: "best", "middle", "worst"
 
 # ==========================================
 # SIMULATION CASES
@@ -214,7 +214,6 @@ def run_slam_simulation(enable_da, show_realtime):
         y_error.append(x_true[1] - x_ukf[1, 0])
         th_error.append(normalize_angle(x_true[2] - x_ukf[2, 0]))
 
-        # NEW: track landmark errors over time
         for i, l_id in enumerate(map_list):
             if l_id > 0 and l_id in true_landmarks:
                 ex = true_landmarks[l_id][0] - x_ukf[3 + 2 * i, 0]
@@ -234,7 +233,6 @@ def run_slam_simulation(enable_da, show_realtime):
         plt.ioff()
         plt.close(fig) 
 
-    # NOTE: now returns 10 elements (added landmark_error_history)
     return true_history, path_history, x_error, y_error, th_error, map_list, x_ukf, P, true_landmarks, landmark_error_history
 
 
@@ -314,7 +312,6 @@ def run_slam_comparison_simultaneous():
         y_error_da.append(x_true_da[1] - x_ukf_da[1, 0])
         th_error_da.append(normalize_angle(x_true_da[2] - x_ukf_da[2, 0]))
 
-        # NEW: track landmark errors over time for both systems
         for i, l_id in enumerate(map_list_noda):
             if l_id > 0 and l_id in true_landmarks:
                 ex = true_landmarks[l_id][0] - x_ukf_noda[3 + 2 * i, 0]
@@ -513,8 +510,8 @@ def plot_comparison_landmark_error_history(res_da, res_noda, max_landmarks=None)
 
 
 def plot_comparison_map(res_da, res_noda):
-    true_history, path_da, _, _, _, _, _, _, true_landmarks, _ = res_da
-    _, path_noda, _, _, _, _, _, _, _, _ = res_noda
+    true_history, path_da, _, _, _, map_list_da, x_ukf_da, P_da, true_landmarks, _ = res_da
+    _, path_noda, _, _, _, map_list_noda, x_ukf_noda, P_noda, _, _ = res_noda
     
     fig, ax = plt.subplots(figsize=(12, 12))
     ax.set_title("Data Association vs Perfect IDs", fontsize=16)
@@ -533,8 +530,24 @@ def plot_comparison_map(res_da, res_noda):
     
     px_d, py_d = zip(*path_da)
     ax.plot(px_d, py_d, 'r--', alpha=0.7, linewidth=2, label="Estimated Path (Data Association)")
-    
-    ax.legend(loc='upper left')
+
+    for i, l_id in enumerate(map_list_noda):
+        lx, ly = x_ukf_noda[3 + 2 * i, 0], x_ukf_noda[3 + 2 * i + 1, 0]
+        label = "Est. Landmark (Perfect IDs)" if i == 0 else ""
+        ax.plot(lx, ly, 'o', color='blue', markersize=5, alpha=0.6, label=label)
+        plot_covariance_ellipse(lx, ly, P_noda[3+2*i:3+2*i+2, 3+2*i:3+2*i+2], ax, color='blue', alpha=0.1)
+
+    for i, l_id in enumerate(map_list_da):
+        lx, ly = x_ukf_da[3 + 2 * i, 0], x_ukf_da[3 + 2 * i + 1, 0]
+        # Usiamo l'arancione per i falsi positivi/nuovi landmark generati in DA
+        color = 'orange' if l_id < 0 else 'red'
+        label = "Est. Landmark (Data Association)" if i == 0 else ""
+        ax.plot(lx, ly, 'o', color=color, markersize=5, alpha=0.6, label=label)
+        plot_covariance_ellipse(lx, ly, P_da[3+2*i:3+2*i+2, 3+2*i:3+2*i+2], ax, color=color, alpha=0.1)
+
+    handles, labels = ax.get_legend_handles_labels()
+    by_label = dict(zip(labels, handles))
+    ax.legend(by_label.values(), by_label.keys(), loc='upper left')
 
 def plot_comparison_pose_errors(res_da, res_noda):
     _, _, err_x_da, err_y_da, err_th_da, _, _, _, _, _ = res_da
