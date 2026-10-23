@@ -44,3 +44,5 @@ The main parameters for starting the simulation can be customized directly in th
 - `MODE_COMPARISON = True` launches the simulation side-by-side in split-screen to visually and mathematically compare the performance of the system with known IDs (Perfect IDs) against the one that deduces associations autonomously (Data Association).
 
 - `ENABLE_REALTIME = True` enables live graphical visualization of the covariance evolution, position estimation, and the addition of new landmarks.
+
+![simulation](imgs/simulation.gif)
